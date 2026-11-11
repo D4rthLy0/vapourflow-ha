@@ -1,0 +1,22 @@
+{
+  "domain": "vapourflow",
+  "name": "VapourFlow",
+  "bluetooth": [
+    {
+      "service_uuid": "4155544f-5354-4154-8943-5f5f30303031",
+      "connectable": true
+    }
+  ],
+  "codeowners": [
+    "@D4rthLy0"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "bluetooth_adapters"
+  ],
+  "documentation": "https://github.com/D4rthLy0/vapourflow-ha",
+  "iot_class": "local_polling",
+  "requirements": [],
+  "version": "0.1.0",
+  "issue_tracker": "https://github.com/D4rthLy0/vapourflow-ha/issues"
+}

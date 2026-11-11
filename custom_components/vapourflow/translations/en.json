@@ -1,0 +1,1 @@
+{"config":{"step":{"user":{"title":"VapourFlow fan","data":{"address":"Bluetooth address"}},"confirm":{"title":"VapourFlow fan","description":"Add the VapourFlow fan at {address}?"}},"abort":{"no_devices_found":"No VapourFlow fan found nearby","already_configured":"Already set up"}}}
