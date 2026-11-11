@@ -51,6 +51,14 @@ The fan should then be discovered automatically (Settings → Devices & services
 
 Other VapourFlow / "Autostat" models probably use the same protocol, but this is untested. Reports welcome in Issues.
 
+## Useful links (official VapourFlow pages)
+
+- [WAD warm air dehumidifier fan: product page](https://www.vapourflow.com/product/wad-warm-air-dehumidifier-fan-attic-whole-house/), with the [WAD datasheet (PDF)](https://www.vapourflow.com/wp-content/uploads/META-INLINE-WAD-01-2026.pdf)
+- [VapourFlow app user guide](https://www.vapourflow.com/vapourflow-app-user-guide/), with the [guide as a PDF](https://www.vapourflow.com/wp-content/uploads/Vapourflow-App-User-Guide-1_22.pdf)
+- [Installation](https://www.vapourflow.com/installation/)
+
+These are VapourFlow's own documents, linked rather than copied.
+
 ## Protocol
 
 See [PROTOCOL.md](PROTOCOL.md) for everything that was worked out, including the parts this integration doesn't use yet (commands, memory reads).
