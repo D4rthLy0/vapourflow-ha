@@ -10,7 +10,7 @@ CHAR_ON32 = "524e3430-3230-4f56-812e-305f4f4e3332"  # status flags (read)
 CHAR_ON64 = "524e3430-3230-4f56-812e-305f4f4e3634"  # temperature + humidity (read)
 CHAR_IT32 = "524e3430-3230-4f56-812e-305f49543332"  # command register (write, not used yet)
 
-UPDATE_SECONDS = 300
+UPDATE_SECONDS = 120  # the fan only answers when asked, and allows one connection at a time
 CHAR_IE64 = "524e3430-3230-4f56-812e-305f49453634"
 CHAR_IOE08 = "524e3430-3230-4f56-812e-30494f453038"
 CHAR_OE64 = "524e3430-3230-4f56-812e-305f4f453634"
