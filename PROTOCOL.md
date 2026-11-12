@@ -34,6 +34,9 @@ The app does steps 1 and 2 on every connect (`setPassword`, `checkNow`). It also
 
 ### ON64 (8 bytes)
 
+> ⚠️ **Probably not live readings.** Over about 390 reads across a day, ON64 always returned exactly `14 15 2c 2d 04 5e 04 5f`. The bytes form consecutive pairs (20/21, 44/45, 1118/1119), which looks more like stored limits or set points than sensor values. The layout below is what the app's parser expects, not a confirmed meaning. Live temperature and humidity probably come from the EEPROM read protocol further down, which hasn't been tested.
+
+
 Example: `14 15 2c 2d 04 5e 04 5f`
 
 - byte 1: temperature °C, signed (`0x15` = 21)

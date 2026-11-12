@@ -1,8 +1,10 @@
 # VapourFlow fan for Home Assistant (unofficial)
 
+> 🚧 **Work in progress: temperature and humidity are NOT correct yet.** After longer testing (12 Nov 2026), the values read from `ON64` never change: every reading returned the same bytes (`14 15 2c 2d 04 5e 04 5f`), so the "21 °C / 45 %" shown is almost certainly a stored setting or limit, not a live measurement. Don't rely on these two sensors. The status flags are probably right but haven't been seen to change yet either. We're working on a safe way to read the real values; until then, treat this project as experimental and unfinished.
+
 A Home Assistant custom integration that reads a **VapourFlow** ventilation fan (tested on a **WAD 150**) over Bluetooth, the same way the VapourFlow app does. No cloud, no app needed once it is set up.
 
-> 🤖 **Built with AI.** This integration and the protocol notes were produced by **Claude (Anthropic's AI, via Claude Code)** working with the owner of the fan in November 2026. The AI decompiled the old Android app to learn the Bluetooth protocol, wrote the code and tested it against a real fan. A human checked each step and backed up the fan's settings first, but please treat it as experimental and review it before you rely on it.
+> 🤖 **Built with AI.** This integration and the protocol notes were produced by **Claude (Anthropic's AI, via Claude Code)** working with the owner of the fan in November 2026. The AI decompiled the old Android app to learn the Bluetooth protocol, wrote the code and tested it against a real fan. A human checked each step and noted down the fan's settings first, but please treat it as experimental and review it before you rely on it.
 
 > ⚠️ **Unofficial.** Not made by, endorsed by or connected to VapourFlow. Use at your own risk.
 
@@ -10,8 +12,8 @@ A Home Assistant custom integration that reads a **VapourFlow** ventilation fan 
 
 | Entity | Notes |
 |---|---|
-| Temperature (°C) | Live, from the fan's own sensor |
-| Humidity (%RH) | Live, from the fan's own sensor |
+| Temperature (°C) | ⚠️ Not live yet: shows a fixed value (see the warning above) |
+| Humidity (%RH) | ⚠️ Not live yet: shows a fixed value (see the warning above) |
 | Heater | On/off (the 200 W heater only runs in intake mode in cold weather) |
 | Intake mode | On = intake (fresh air in), off = extract |
 | Boost, Dehumidify | On/off |
@@ -29,7 +31,7 @@ Each poll it repeats exactly what the official app does every time it connects, 
 
 1. Writes the app's fixed login `123456` to the `IE64` characteristic.
 2. Writes `0x01` to `IOE08` ("check now"). Without these two steps the temperature/humidity value comes back empty.
-3. Reads `ON32` (status flags) and `ON64` (temperature + humidity), then disconnects.
+3. Reads `ON32` (status flags) and `ON64` (thought to be temperature + humidity, but see the warning at the top), then disconnects.
 
 ## Requirements
 
