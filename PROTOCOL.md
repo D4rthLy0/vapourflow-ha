@@ -66,15 +66,51 @@ There is **no "motor running" bit**.
 
 ## Commands (*unconfirmed, not used by this integration*)
 
-IT32 is a 32-bit register that mirrors the state. The app starts from the ON32 state, clears some alarm/log bits, sets the field, then writes the value as big-endian bytes with leading zero bytes dropped.
+Decoded twice, independently, from the app's `AutostatOperations` (`setFanIntake`, `setDehumidication`, `setHumidifcation`, `setAlarm`). Nothing here has been sent to a real fan yet.
+
+IT32 is a 32-bit register. To send a command, the app:
+
+1. Starts from its copy of the state. On every ON32 read it copies two bits across: boost `0x00400000` from ON32 byte 1 `0x40`, and direction `0x00800000` from ON32 byte 1 `0x80`.
+2. Clears the one-shot bits: `0x80000000`, `0x40000000`, `0x30000000`, `0x08000000`, `0x00200000`, `0x00100000`, `0x2000`, `0x1000` and `0x0100`.
+3. Sets the field for the command (see the table).
+4. Writes the value to IT32 with response, as **unsigned hex with leading zero bytes dropped, big-endian**. For example, `0x00800000` is sent as `80 00 00`, `0x04800000` as `04 80 00 00`, and `0` as `00`.
+
+To confirm a command worked, write `0x01` to IOE08, wait about 2 s, then read ON32 again.
 
 | Mask | Meaning |
 |---|---|
-| `0x00800000` | Fan direction (1 = intake) |
-| `0x00400000` | Fan speed (boost) |
-| `0x02000000` | Dehumidification on |
+| `0x00800000` | Fan direction (1 = intake, 0 = extract) |
+| `0x00400000` | Fan speed (boost). The app only copies this from ON32 and never sets it, so boost seems to be automatic |
+| `0x04000000` | `setDehumidication` (0/1) |
+| `0x02000000` | `setHumidifcation` (0/1). Probably matches ON32 byte 0 `0x02` |
+| `0x80000000` | `setAlarm` (one-shot) |
+
+The app does **not** copy the `0x04000000` and `0x02000000` bits from ON32, so a direction change after an app restart sends them as 0. It is probably safer to copy them from ON32 byte 0 (`0x04` and `0x02`) as well.
+
+**Do not send** these bits. They are listed only so they can be avoided:
+
+| Mask | Meaning |
+|---|---|
+| `0x00000200` | Bootloader mode |
+| `0x00000400` | Smoke extract |
+| `0x01000000` | Fan test |
+| `0x00080000` | Flap test |
+| `0x00010000` | Heater test |
 | `0x00008000` | Heater control |
 | `0x00007F00` | Humidity set level |
+| `0x10000000` | One-hour log |
+| `0x08000000` | Battery log |
+
+## EEPROM settings writes (*unconfirmed, risky, not used*)
+
+Fan speed % (`setSpeedPercentage`, 0–100) and the humidity threshold (`setHumidityLevel`, 0–99) are stored settings, not IT32 bits. The app writes them like this:
+
+1. Write `0x00` to IOE08.
+2. Write a command word to IE32: the address, plus count `1 << 20`, plus write flag `0x00020000`, plus start flag `0x00040000`.
+3. Send the data byte.
+4. Write `0x01200000` to IT32 to commit.
+
+Addresses: speed `0xB2`, `0xB3`, `0xB5` and `0xB6`; humidity `0xB8` and `0xB9`. The wrong address writes the wrong setting into the fan's permanent memory.
 
 ## EEPROM reads (*unconfirmed, not used*)
 
