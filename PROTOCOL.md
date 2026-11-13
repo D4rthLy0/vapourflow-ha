@@ -34,7 +34,7 @@ The app does steps 1 and 2 on every connect (`setPassword`, `checkNow`). It also
 
 ### ON64 (8 bytes)
 
-> ✅ **Live, through an ESPHome Bluetooth proxy (13 Nov 2026).** Through a BlueZ host adapter, ON64 kept returning the same snapshot (e.g. `14 15 2c 2d 04 5e 04 5f` for two days), which only changed after the official app had connected. Through an ESPHome proxy, the same read after login + check-now is live: byte 1 tracked temperature (19–22 °C) and byte 3 tracked humidity (45 → 58 % in a kettle test). Bytes 0 and 2 usually equal or sit 1 below bytes 1 and 3. Bytes 4–7 also change; their meaning is unknown.
+> ✅ **Live, through an ESPHome Bluetooth proxy (13 Nov 2026).** Through a BlueZ host adapter, ON64 kept returning the same snapshot (e.g. `14 15 2c 2d 04 5e 04 5f` for two days), which only changed after the official app had connected. Through an ESPHome proxy, the same read after login + check-now is live: byte 1 tracked temperature (19–22 °C) and byte 3 tracked humidity (45 → 58 % in a kettle test). Bytes 0 and 2 usually equal or sit 1 below bytes 1 and 3. Bytes 4–5 and 6–7 are big-endian water vapour pressure in pascals (two near-identical copies; the integration uses 6–7).
 
 
 Example: `14 15 2c 2d 04 5e 04 5f`
@@ -49,7 +49,7 @@ Example: `14 15 2c 2d 04 5e 04 5f`
 |---|---|---|
 | 0 | `0x01` | Alarm |
 | 0 | `0x02` | Dehumidify on |
-| 0 | `0xF8` (>>3) | "External air" value |
+| 0 | `0xF8` (>>3) | "External air": incoming air temperature, °C (heater on below about 14 °C) |
 | 1 | `0x40` | Fan speed (boost) |
 | 1 | `0x80` | Fan direction: 1 = intake, 0 = extract |
 | 2 | `0x01` | Test acknowledge |

@@ -14,12 +14,14 @@ A Home Assistant custom integration that reads a **VapourFlow** ventilation fan 
 |---|---|
 | Temperature (°C) | Live through an ESPHome proxy (see the note above) |
 | Humidity (%RH) | Live through an ESPHome proxy (see the note above) |
+| Vapour pressure (Pa) | Moisture in the air, in pascals: the value the controller's humidity thresholds use |
+| Incoming air temperature (°C) | Temperature of the air coming in; the heater switches on below about 14 °C and off at about 16 °C |
 | Heater | On/off (the 200 W heater only runs in intake mode in cold weather) |
 | Intake mode | On = intake (fresh air in), off = extract |
 | Boost, Dehumidify | On/off |
 | Alarm, Smoke detected, Heat detected, Sounder | Fault/alarm flags |
 | Light switch input, Override | Status inputs |
-| Power supply flag, Battery code, External air value, Valve flag | Diagnostic: raw values whose meaning isn't confirmed |
+| Power supply flag, Battery code, Valve flag | Diagnostic: raw values whose meaning isn't confirmed |
 
 It polls every 2 minutes. If one reading fails it retries after 10 s, and it keeps the last good readings for up to 30 minutes before going unavailable.
 
@@ -57,9 +59,17 @@ No settings were changed at any point, and the integration has never sent an EEP
 - **No extra commands are needed.** The login (`123456` to `IE64`) and "check now" (`IOE08` = 1) the app sends on connect are enough. No EEPROM access is involved.
 - **The fan's radio is weak.** Even 3 m away with a clear view, the proxy only sees it at about −90 dBm, but connections still work. Mounting the proxy high up, with a clear view of the fan, helped.
 
+### Decoded since
+
+- `ON64` bytes 6–7 (big-endian) are the **water vapour pressure in pascals**. For example, 21 °C / 45 % gives 1119 Pa, which is exactly what the physics predicts. Bytes 4–5 hold a near-identical second copy. These are the same units as the dynamic humidity thresholds (78 / 157 / 300 / 546 / 950 Pa).
+- `ON32` byte 0 bits 3–7 ("external air" in the app) is the **incoming air temperature in °C**. The heater came on at 13–15 °C and went off at 16–17 °C. VapourFlow's WAD 100 datasheet says the heater only runs below 14 °C.
+- `OT08` follows the temperature.
+- The unit is controlled by a built-in **AUTOSTAT IV** humidistat. The WAD 100 datasheet gives the fan as 4.5 W (6.5 W at the higher setting) and the heater as 200 W.
+
 ### Still unknown
 
-- The meaning of `ON32` byte 0 bits 3–7 (the app calls it "external air") and of `OT08` / `OH16`, which both change but aren't decoded.
+- `OH16` changes slowly but isn't confirmed. It's probably the humidity sensor's raw frequency, since it rises as humidity falls.
+- The `ON32` byte 3 inputs (light switch trigger, override). The controller is an AUTOSTAT IV with a pull switch, and pulling it should show up here; this hasn't been tested yet.
 - Why the host adapter returned stale values.
 
 ## Requirements

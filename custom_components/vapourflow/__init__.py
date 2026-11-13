@@ -29,6 +29,10 @@ def parse(on32: bytes, on64: bytes) -> dict:
         data["temperature"] = int.from_bytes(on64[1:2], "little", signed=True)
     if len(on64) > 3:
         data["humidity"] = on64[3]
+    if len(on64) > 7:
+        # Water vapour pressure in pascals (bytes 6-7, big-endian; bytes 4-5 are a near-identical
+        # second copy). Checked 2026-11-13: 21 °C/45 % -> 1119 Pa, 19 °C/43 % -> 945 Pa.
+        data["vapour_pressure"] = int.from_bytes(on64[6:8], "big")
     if len(on32) > 2:
         data["dehumidify_on"] = bool(on32[0] & 0x02)
         data["boost"] = bool(on32[1] & 0x40)
