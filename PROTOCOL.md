@@ -21,8 +21,8 @@ All share the prefix `524e3430-3230-4f56-812e-`. The last six bytes spell the na
 | IT32 | `305f49543332` | write | 32-bit command register (*unconfirmed*) |
 | IE32 | `305f49453332` | write | EEPROM command word (*unconfirmed*) |
 | OE64 | `305f4f453634` | read | EEPROM data out |
-| OT08 | `305f4f543038` | read | Single byte; matched the temperature in testing |
-| OH16 | `305f4f483136` | read | Unknown |
+| OT08 | `305f4f543038` | read | Single byte; always `15` (21) in testing, never changed |
+| OH16 | `305f4f483136` | read | Unknown; always `1b92` in testing |
 
 ## Reading live values
 
@@ -34,7 +34,7 @@ The app does steps 1 and 2 on every connect (`setPassword`, `checkNow`). It also
 
 ### ON64 (8 bytes)
 
-> ⚠️ **Probably not live readings.** Over about 390 reads across a day, ON64 always returned exactly `14 15 2c 2d 04 5e 04 5f`. The bytes form consecutive pairs (20/21, 44/45, 1118/1119), which looks more like stored limits or set points than sensor values. The layout below is what the app's parser expects, not a confirmed meaning. Live temperature and humidity probably come from the EEPROM read protocol further down, which hasn't been tested.
+> ⚠️ **Not live readings (confirmed 13 Nov 2026).** Over hundreds of reads across two days, ON64 always returned exactly `14 15 2c 2d 04 5e 04 5f`, including while a kettle was boiling under the fan and while the iOS app showed 47 %RH / 23 °C. The bytes form consecutive pairs (20/21, 44/45, 1118/1119), which looks like stored limits or set points. The layout below is what the old app's parser expects (`parseOS64`). The old app never actively reads OS64, so the iOS app (v2.0) presumably triggers a refresh some other way that isn't known yet.
 
 
 Example: `14 15 2c 2d 04 5e 04 5f`
@@ -125,3 +125,7 @@ The settings, logs, serial number and counters live in the fan's memory. The app
 4. Read the data from OE64.
 
 Known addresses from the app: 47 (length 2) is a temperature value ("readSmokeTemp"), 35 or 188 (length 12) is the humidity settings, and 0 (length 3) is the smoke/humidity data. Getting a bit wrong here could write to the EEPROM, so be careful.
+
+The command word is built by OR-ing each value into its mask (shifted to the mask's lowest bit). It is sent as big-endian bytes, `length(hex)/2 + 1` bytes long (so it can start with a `00`). Example, not sent to a fan: address 35, length 12, read gives `0x00C40023`, sent as `00 C4 00 23`.
+
+Address 35 (length 12) is parsed by `processHumRead` into the five **dynamic humidity thresholds** (0–9 °C … 40 °C+, in pascals) plus the range-blending flag and factor. It is the iOS app's "reading Humidity data" pop-up on the Dynamic Humidity Control screen. It is **not** live humidity, so it doesn't solve the live-readings problem.
