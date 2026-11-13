@@ -15,14 +15,14 @@ All share the prefix `524e3430-3230-4f56-812e-`. The last six bytes spell the na
 | Name | UUID suffix | Properties | Use |
 |---|---|---|---|
 | ON32 (app: OS32) | `305f4f4e3332` | read | Status flags (4 bytes) |
-| ON64 (app: OS64) | `305f4f4e3634` | read | Live readings (8 bytes); empty until the login + check-now writes |
+| ON64 (app: OS64) | `305f4f4e3634` | read | Live readings (8 bytes); empty until the login + check-now writes. Live via an ESPHome proxy; frozen via BlueZ in our tests |
 | IE64 | `305f49453634` | write | Login (`"123456"` ASCII) / EEPROM data in |
 | IOE08 | `30494f453038` | read, write | 1 = "check now" / EEPROM busy flag |
 | IT32 | `305f49543332` | write | 32-bit command register (*unconfirmed*) |
 | IE32 | `305f49453332` | write | EEPROM command word (*unconfirmed*) |
 | OE64 | `305f4f453634` | read | EEPROM data out |
-| OT08 | `305f4f543038` | read | Single byte; always `15` (21) in testing, never changed |
-| OH16 | `305f4f483136` | read | Unknown; always `1b92` in testing |
+| OT08 | `305f4f543038` | read | Single byte; follows the temperature (e.g. `13`–`17` = 19–23) through a proxy |
+| OH16 | `305f4f483136` | read | Unknown; changes slowly (`1bcc`–`1c0c` in testing) |
 
 ## Reading live values
 
@@ -34,7 +34,7 @@ The app does steps 1 and 2 on every connect (`setPassword`, `checkNow`). It also
 
 ### ON64 (8 bytes)
 
-> ⚠️ **Not live readings (confirmed 13 Nov 2026).** Over hundreds of reads across two days, ON64 always returned exactly `14 15 2c 2d 04 5e 04 5f`, including while a kettle was boiling under the fan and while the iOS app showed 47 %RH / 23 °C. The bytes form consecutive pairs (20/21, 44/45, 1118/1119), which looks like stored limits or set points. The layout below is what the old app's parser expects (`parseOS64`). The old app never actively reads OS64, so the iOS app (v2.0) presumably triggers a refresh some other way that isn't known yet.
+> ✅ **Live, through an ESPHome Bluetooth proxy (13 Nov 2026).** Through a BlueZ host adapter, ON64 kept returning the same snapshot (e.g. `14 15 2c 2d 04 5e 04 5f` for two days), which only changed after the official app had connected. Through an ESPHome proxy, the same read after login + check-now is live: byte 1 tracked temperature (19–22 °C) and byte 3 tracked humidity (45 → 58 % in a kettle test). Bytes 0 and 2 usually equal or sit 1 below bytes 1 and 3. Bytes 4–7 also change; their meaning is unknown.
 
 
 Example: `14 15 2c 2d 04 5e 04 5f`
