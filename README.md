@@ -20,7 +20,8 @@ A Home Assistant custom integration that reads a **VapourFlow** ventilation fan 
 | Intake mode | On = intake (fresh air in), off = extract |
 | Boost, Dehumidify | On/off |
 | Alarm, Smoke detected, Heat detected, Sounder | Fault/alarm flags |
-| Light switch input, Override | Status inputs |
+| Pull cord (forced extract) | On while the unit's pull cord has forced it to extract at full speed (red LED); pull again for automatic |
+| Override | Status input (not seen to change yet) |
 | Power supply flag, Battery code, Valve flag | Diagnostic: raw values whose meaning isn't confirmed |
 
 It polls every 2 minutes. If one reading fails it retries after 10 s, and it keeps the last good readings for up to 30 minutes before going unavailable.
@@ -64,17 +65,18 @@ No settings were changed at any point, and the integration has never sent an EEP
 - `ON64` bytes 6–7 (big-endian) are the **water vapour pressure in pascals**. For example, 21 °C / 45 % gives 1119 Pa, which is exactly what the physics predicts. Bytes 4–5 hold a near-identical second copy. These are the same units as the dynamic humidity thresholds (78 / 157 / 300 / 546 / 950 Pa).
 - `ON32` byte 0 bits 3–7 ("external air" in the app) is the **incoming air temperature in °C**. The heater came on at 13–15 °C and went off at 16–17 °C. VapourFlow's WAD 100 datasheet says the heater only runs below 14 °C.
 - `OT08` follows the temperature.
+- `ON32` byte 3 bit 0 is the unit's **pull cord**. The first pull turns it on: red LED, forced extract + boost. The second pull turns it off again (LED off, then amber/green) and returns the unit to automatic.
 - The unit is controlled by a built-in **AUTOSTAT IV** humidistat. The WAD 100 datasheet gives the fan as 4.5 W (6.5 W at the higher setting) and the heater as 200 W.
 
 ### Still unknown
 
 - `OH16` changes slowly but isn't confirmed. It's probably the humidity sensor's raw frequency, since it rises as humidity falls.
-- The `ON32` byte 3 inputs (light switch trigger, override). The controller is an AUTOSTAT IV with a pull switch, and pulling it should show up here; this hasn't been tested yet.
+- `ON32` byte 3 bit 1 ("override"), probably the remote override input. It hasn't been seen to change.
 - Why the host adapter returned stale values.
 
 ## Requirements
 
-- Home Assistant with an **ESPHome Bluetooth proxy** near the fan (strongly recommended). A local adapter may connect, but in our testing it returned frozen values (see above). The fan's radio is weak, so put the proxy in the same room, high up, with a clear view of the fan.
+- Home Assistant with an **ESPHome Bluetooth proxy** near the fan (**required**). The integration refuses readings made through a local BlueZ adapter, because in our testing those were frozen. If another adapter keeps getting picked, disable it for connections or remove it. The fan's radio is weak, so put the proxy in the same room, high up, with a clear view of the fan.
 - The fan only accepts **one connection at a time**. Close the VapourFlow app before Home Assistant polls, or temporarily disable this integration while you use the app.
 
 ## Install

@@ -14,7 +14,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
         VFBinary(c, "smoke_detected", "Smoke detected", BinarySensorDeviceClass.SMOKE, None),
         VFBinary(c, "heat_detected", "Heat detected", BinarySensorDeviceClass.HEAT, "mdi:fire-alert"),
         VFBinary(c, "sounder", "Sounder", BinarySensorDeviceClass.SOUND, None),
-        VFBinary(c, "light_switch", "Light switch input", None, "mdi:light-switch"),
+        # ON32 byte 3 bit 0: the pull cord on the unit (confirmed 2026-11-13). On = forced extract + boost
+        # (red LED); pull again for automatic. The app calls it the light switch trigger input.
+        VFBinary(c, "light_switch", "Pull cord (forced extract)", None, "mdi:gesture-tap"),
         VFBinary(c, "override", "Override", None, "mdi:hand-back-right"),
     ])
 

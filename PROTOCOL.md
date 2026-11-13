@@ -57,7 +57,7 @@ Example: `14 15 2c 2d 04 5e 04 5f`
 | 2 | `0x08` | Heater on |
 | 2 | `0x70` (>>4) | Application version |
 | 2 | `0x80` | Sounder |
-| 3 | `0x01` | Opto-isolator (light switch input) |
+| 3 | `0x01` | Opto-isolator input: on the WAD wall unit this is the **pull cord** (1 = forced extract + boost, red LED) |
 | 3 | `0x02` | Override |
 | 3 | `0x04` | Smoke detected |
 | 3 | `0x08` | Heat detected |

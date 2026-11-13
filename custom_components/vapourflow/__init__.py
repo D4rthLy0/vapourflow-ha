@@ -66,6 +66,12 @@ class VapourFlowCoordinator(DataUpdateCoordinator[dict]):
         if device is None:
             raise UpdateFailed("Fan not in Bluetooth range right now")
         client = await establish_connection(BleakClientWithServiceCache, device, "VapourFlow", max_attempts=3)
+        # Through the host's own adapter (BlueZ) the fan only ever returned a frozen snapshot;
+        # through an ESPHome proxy the values are live (found 2026-11-13). So don't use BlueZ reads.
+        backend = type(getattr(client, "_backend", None)).__name__
+        if "BlueZ" in backend:
+            await client.disconnect()
+            raise UpdateFailed("Connected through the local Bluetooth adapter, which returns stale values; waiting for the proxy")
         try:
             # Same two messages the app sends on every connect (setPassword, checkNow).
             # No settings, no EEPROM access.
@@ -77,7 +83,9 @@ class VapourFlowCoordinator(DataUpdateCoordinator[dict]):
             on64 = bytes(await client.read_gatt_char(CHAR_ON64))
         finally:
             await client.disconnect()
-        return parse(on32, on64)
+        data = parse(on32, on64)
+        data["via"] = backend
+        return data
 
     async def _async_update_data(self) -> dict:
         """Read the fan; the Bluetooth link is weak, so retry once and ride out short gaps."""
