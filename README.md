@@ -8,6 +8,11 @@ A Home Assistant custom integration that reads a **VapourFlow** ventilation fan 
 
 > ⚠️ **Unofficial.** Not made by, endorsed by or connected to VapourFlow. Use at your own risk.
 
+<p align="center">
+  <img src="images/kitchen-dashboard-s25-ultra.jpg" alt="An example Home Assistant dashboard built from this integration's sensors, on a Samsung Galaxy S25 Ultra" width="360">
+  <br><sub>Example dashboard on a Samsung Galaxy S25 Ultra (Home Assistant app, dark theme). The readings come from this integration. The layout, the 24-hour graphs, the heater forecast and the running-cost estimate were set up separately with standard Home Assistant cards and helpers, and aren't included here.</sub>
+</p>
+
 ## What you get
 
 | Entity | Notes |
