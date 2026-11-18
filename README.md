@@ -25,7 +25,7 @@ A Home Assistant custom integration that reads a **VapourFlow** ventilation fan 
 | Intake mode | On = intake (fresh air in), off = extract |
 | Boost, Dehumidify | On/off |
 | Alarm, Smoke detected, Heat detected, Sounder | Fault/alarm flags |
-| Pull cord (forced extract) | On while the unit's pull cord has forced it to extract at full speed (red LED); pull again for automatic |
+| Pull cord (forced extract) | On while the unit is in forced extract. Pulling the cord turns it on, but it has also come on by itself for 25–40 min at a time (often around cooking) with nobody touching the cord, so treat it as "forced extract / light-switch input active" rather than strictly the cord |
 | Override | Status input (not seen to change yet) |
 | Power supply flag, Battery code, Valve flag | Diagnostic: raw values whose meaning isn't confirmed |
 
@@ -69,8 +69,10 @@ No settings were changed at any point, and the integration has never sent an EEP
 
 - `ON64` bytes 6–7 (big-endian) are the **water vapour pressure in pascals**. For example, 21 °C / 45 % gives 1119 Pa, which is exactly what the physics predicts. Bytes 4–5 hold a near-identical second copy. These are the same units as the dynamic humidity thresholds (78 / 157 / 300 / 546 / 950 Pa).
 - `ON32` byte 0 bits 3–7 ("external air" in the app) is the **incoming air temperature in °C**. The heater came on at 13–15 °C and went off at 16–17 °C. VapourFlow's WAD 100 datasheet says the heater only runs below 14 °C.
+  While the unit is **extracting**, this sensor sits in the outgoing kitchen air, so it can read 25–31 °C during cooking. That's not the outside temperature. 31 is the largest value the 5-bit field can hold.
+- **Glitch filtering (v0.1.1):** very occasionally the fan returns a garbled frame (seen once: humidity 0 %, vapour pressure 0 Pa and incoming air 31 °C in a single poll, normal either side). Reads with humidity outside 1–100 %, vapour pressure ≤ 0 or a temperature outside −20…60 °C are now rejected and retried, and a one-off jump of 15 °C or more in the incoming air temperature is held back until the next poll confirms it. Both are logged as warnings.
 - `OT08` follows the temperature.
-- `ON32` byte 3 bit 0 is the unit's **pull cord**. The first pull turns it on: red LED, forced extract + boost. The second pull turns it off again (LED off, then amber/green) and returns the unit to automatic.
+- `ON32` byte 3 bit 0 is the unit's **pull cord**. The first pull turns it on: red LED, forced extract + boost. The second pull turns it off again (LED off, then amber/green) and returns the unit to automatic. **Correction (18 Nov 2026):** the same bit also switches on by itself for 25–40 minutes at a time, often around mealtimes, with nobody touching the cord, and once during a kettle test. The Autostat spec lists a light-switch trigger with a proportional overrun timer, so this bit is probably that input / "forced extract running", and the cord is just one way to set it.
 - The unit is controlled by a built-in **AUTOSTAT IV** humidistat. The WAD 100 datasheet gives the fan as 4.5 W (6.5 W at the higher setting) and the heater as 200 W.
 
 ### Still unknown

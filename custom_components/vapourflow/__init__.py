@@ -17,6 +17,20 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from .const import CHAR_IE64, CHAR_IOE08, CHAR_ON32, CHAR_ON64, DOMAIN, UPDATE_SECONDS
 
 STALE_AFTER = 30 * 60  # keep showing the last readings for up to 30 min of failed polls
+AIR_JUMP = 15          # °C: a one-off jump this big in the incoming air reading is treated as a glitch
+
+
+def implausible(data: dict) -> str | None:
+    """Reason a whole read is garbage (seen 2026-11-18 08:29: humidity 0, vapour pressure 0,
+    incoming air 31 in one frame, normal 2 min either side), or None if it looks fine."""
+    hum, vp, temp = data.get("humidity"), data.get("vapour_pressure"), data.get("temperature")
+    if hum is not None and not 1 <= hum <= 100:
+        return f"humidity {hum}"
+    if vp is not None and vp <= 0:
+        return f"vapour pressure {vp}"
+    if temp is not None and not -20 <= temp <= 60:
+        return f"temperature {temp}"
+    return None
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = [Platform.SENSOR, Platform.BINARY_SENSOR]
@@ -60,6 +74,22 @@ class VapourFlowCoordinator(DataUpdateCoordinator[dict]):
         self.address = address
         self._last: dict | None = None
         self._last_ok = 0.0
+        self._air_candidate: int | None = None  # a big incoming-air jump waiting for confirmation
+
+    def _filter_air(self, data: dict) -> None:
+        """Hold back a one-off jump in the incoming air reading (seen 2026-11-18 13:54: 30, 0, 30).
+        A real change shows up again on the next poll and is then accepted."""
+        new = data.get("external_air")
+        old = self._last.get("external_air") if self._last else None
+        if new is None or old is None or abs(new - old) < AIR_JUMP:
+            self._air_candidate = None
+            return
+        if self._air_candidate is not None and abs(new - self._air_candidate) < AIR_JUMP:
+            self._air_candidate = None  # seen twice in a row: it's real
+            return
+        _LOGGER.warning("VapourFlow: ignoring a one-off incoming air reading of %s °C (last %s °C)", new, old)
+        self._air_candidate = new
+        data["external_air"] = old
 
     async def _read_once(self) -> dict:
         device = bluetooth.async_ble_device_from_address(self.hass, self.address, connectable=True)
@@ -95,6 +125,11 @@ class VapourFlowCoordinator(DataUpdateCoordinator[dict]):
                 data = await self._read_once()
                 if "humidity" not in data:
                     raise UpdateFailed("Fan answered without temperature/humidity")
+                bad = implausible(data)
+                if bad:
+                    _LOGGER.warning("VapourFlow: ignoring an implausible read (%s): %s", bad, data)
+                    raise UpdateFailed(f"Implausible read ({bad})")
+                self._filter_air(data)
                 self._last = data
                 self._last_ok = time.monotonic()
                 _LOGGER.debug("VapourFlow read: %s", data)

@@ -17,6 +17,6 @@
   "documentation": "https://github.com/D4rthLy0/vapourflow-ha",
   "iot_class": "local_polling",
   "requirements": [],
-  "version": "0.1.0",
+  "version": "0.1.1",
   "issue_tracker": "https://github.com/D4rthLy0/vapourflow-ha/issues"
 }
